@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:toolbox/core/persistant_store.dart';
-import 'package:toolbox/core/utils/platform.dart';
+import 'package:toolbox/core/utils/platform/base.dart';
 
 import '../model/app/net_view.dart';
 import '../res/default.dart';
@@ -202,6 +202,13 @@ class SettingStore extends PersistentStore {
   late final icloudSync = StoreProperty(
     box,
     'icloudSync',
+    false,
+  );
+
+  /// Only valid on iOS / Android/ Windows
+  late final useBioAuth = StoreProperty(
+    box,
+    'useBioAuth',
     false,
   );
 

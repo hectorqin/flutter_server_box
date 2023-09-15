@@ -5,7 +5,7 @@ import 'package:countly_flutter/countly_flutter.dart';
 import 'package:toolbox/core/build_mode.dart';
 import 'package:toolbox/data/res/logger.dart';
 
-import 'utils/platform.dart';
+import 'utils/platform/base.dart';
 
 class Analysis {
   static const _url = 'https://countly.xuty.cc';

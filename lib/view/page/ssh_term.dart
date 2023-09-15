@@ -15,7 +15,7 @@ import 'package:xterm/core.dart';
 import 'package:xterm/ui.dart' hide TerminalThemes;
 
 import '../../core/route.dart';
-import '../../core/utils/platform.dart';
+import '../../core/utils/platform/base.dart';
 import '../../core/utils/misc.dart';
 import '../../core/utils/server.dart';
 import '../../data/model/server/server_private_info.dart';

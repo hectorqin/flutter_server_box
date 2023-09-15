@@ -8,7 +8,7 @@ import 'package:plain_notification_token/plain_notification_token.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:toolbox/data/res/provider.dart';
 
-import 'platform.dart';
+import 'platform/base.dart';
 
 Future<bool> shareFiles(BuildContext context, List<String> filePaths) async {
   for (final filePath in filePaths) {

@@ -214,11 +214,8 @@ const _bsdStatusCmd = [
 
 final _shellCmd = """
 #!/bin/sh
-#
-# Script for ServerBox app v1.0.${BuildData.build}
-#
+# ServerBox app script
 # DO NOT delete this file while app is running
-# DO NOT run multi ServerBox apps with different version at the same time
 
 export LANG=en_US.UTF-8
 

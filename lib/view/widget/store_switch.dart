@@ -4,6 +4,8 @@ import '../../core/persistant_store.dart';
 
 class StoreSwitch extends StatelessWidget {
   final StorePropertyBase<bool> prop;
+
+  /// It's called after the value is put to the store.
   final void Function(bool)? func;
 
   const StoreSwitch({super.key, required this.prop, this.func});
@@ -16,8 +18,8 @@ class StoreSwitch extends StatelessWidget {
         return Switch(
           value: value,
           onChanged: (value) {
-            func?.call(value);
             prop.put(value);
+            func?.call(value);
           },
         );
       },

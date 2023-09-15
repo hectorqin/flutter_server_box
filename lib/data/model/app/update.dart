@@ -27,7 +27,7 @@
 
 import 'dart:convert';
 
-import '/core/utils/platform.dart';
+import '../../../core/utils/platform/base.dart';
 
 class AppUpdate {
   const AppUpdate({

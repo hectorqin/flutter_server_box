@@ -18,7 +18,7 @@ import '../../../core/extension/numx.dart';
 import '../../../core/extension/stringx.dart';
 import '../../../core/route.dart';
 import '../../../core/utils/misc.dart';
-import '../../../core/utils/platform.dart';
+import '../../../core/utils/platform/base.dart';
 import '../../../data/model/server/server_private_info.dart';
 import '../../../data/model/sftp/absolute_path.dart';
 import '../../../data/model/sftp/browser_status.dart';

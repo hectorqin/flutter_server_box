@@ -12,13 +12,15 @@ import 'package:toolbox/core/extension/context/snackbar.dart';
 import 'package:toolbox/core/extension/locale.dart';
 import 'package:toolbox/core/extension/context/dialog.dart';
 import 'package:toolbox/core/extension/stringx.dart';
+import 'package:toolbox/core/utils/platform/auth.dart';
 import 'package:toolbox/data/res/provider.dart';
 import 'package:toolbox/data/res/store.dart';
+import 'package:watch_connectivity/watch_connectivity.dart';
 
 import '../../../core/persistant_store.dart';
 import '../../../core/route.dart';
 import '../../../core/utils/misc.dart';
-import '../../../core/utils/platform.dart';
+import '../../../core/utils/platform/base.dart';
 import '../../../core/update.dart';
 import '../../../data/model/app/net_view.dart';
 import '../../../data/provider/app.dart';
@@ -186,11 +188,14 @@ class _SettingPageState extends State<SettingPage> {
     if (isIOS) {
       children.add(_buildPushToken());
       children.add(_buildAutoUpdateHomeWidget());
+      children.add(_buildWatchApp());
     }
     if (isAndroid) {
       children.add(_buildBgRun());
       children.add(_buildAndroidWidgetSharedPreference());
     }
+    // Put this at the end, because it will make a padding if not available
+    children.add(_buildBioAuth());
     return Column(
       children: children.map((e) => RoundRectCard(e)).toList(),
     );
@@ -1096,4 +1101,114 @@ class _SettingPageState extends State<SettingPage> {
   //     trailing: StoreSwitch(prop: _setting.doubleColumnServersPage),
   //   );
   // }
+
+  /// Setting item for configing watchOS app
+  Widget _buildWatchApp() {
+    final wc = WatchConnectivity();
+    return FutureWidget(
+      future: wc.isPaired,
+      loading: ListTile(
+        title: Text('watchApp'),
+        subtitle: Text(_s.serverTabLoading),
+      ),
+      error: (e, __) => ListTile(
+        title: Text('watchApp'),
+        subtitle: Text('${_s.failed}: $e'),
+      ),
+      success: (_) => ListTile(
+        title: Text('_s.watchApp'),
+        trailing: const Icon(Icons.keyboard_arrow_right),
+        onTap: () => _onWatchTap(wc),
+      ),
+      noData: UIs.placeholder,
+    );
+  }
+
+  void _onWatchTap(WatchConnectivity wc) async {
+    final raw = await wc.applicationContext;
+    final urls = List<String>.from(raw['urls'] ?? []);
+    await context.showRoundDialog(
+      title: Text(_s.edit),
+      child: SizedBox(
+        height: 377,
+        width: 377,
+        child: StatefulBuilder(builder: (context, setState) {
+          return ListView.builder(
+            itemBuilder: (_, idx) {
+              if (idx == urls.length) {
+                return ListTile(
+                  title: Text(_s.add),
+                  onTap: () async {
+                    final url = await context.showRoundDialog<String>(
+                      title: Text(_s.add),
+                      child: Input(
+                        autoFocus: true,
+                        label: 'URL',
+                        icon: Icons.link,
+                        onSubmitted: (url) => context.pop(url),
+                      ),
+                    );
+                    if (url != null) {
+                      urls.add(url);
+                      await wc.updateApplicationContext({'urls': urls});
+                      setState(() {});
+                    }
+                  },
+                );
+              }
+              final url = urls[idx];
+              return ListTile(
+                title: Text(url),
+                trailing: IconButton(
+                  icon: const Icon(Icons.delete),
+                  onPressed: () async {
+                    urls.removeAt(idx);
+                    await wc.updateApplicationContext({'urls': urls});
+                    setState(() {});
+                  },
+                ),
+              );
+            },
+            itemCount: urls.length + 1,
+          );
+        }),
+      ),
+    );
+  }
+
+  Widget _buildBioAuth() {
+    return FutureWidget<bool>(
+      future: isBioAuthAvail,
+      loading: UIs.placeholder,
+      error: (e, __) => ListTile(
+        title: Text(_s.bioAuth),
+        subtitle: Text('${_s.failed}: $e'),
+      ),
+      success: (can) {
+        return ListTile(
+          title: Text(_s.bioAuth),
+          trailing: can
+              ? StoreSwitch(
+                  prop: Stores.setting.useBioAuth,
+                  func: (val) async {
+                    if (val) {
+                      if (!await isBioAuthAvail) {
+                        Stores.setting.useBioAuth.put(false);
+                      }
+                      return;
+                    }
+                    // Only auth when turn off (val == false)
+                    final result = await authBio();
+                    // If failed, turn on again
+                    if (result != AuthResult.success) {
+                      Stores.setting.useBioAuth.put(true);
+                    }
+                  },
+                )
+              : null,
+        );
+      },
+      noData: UIs.placeholder,
+    );
+  }
 }

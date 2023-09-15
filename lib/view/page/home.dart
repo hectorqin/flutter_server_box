@@ -4,7 +4,10 @@ import 'package:after_layout/after_layout.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/l10n.dart';
 import 'package:get_it/get_it.dart';
+import 'package:toolbox/core/channel/bg_run.dart';
+import 'package:toolbox/core/channel/home_widget.dart';
 import 'package:toolbox/core/extension/context/dialog.dart';
+import 'package:toolbox/core/utils/platform/auth.dart';
 import 'package:toolbox/data/res/github_id.dart';
 import 'package:toolbox/data/res/logger.dart';
 import 'package:toolbox/data/res/provider.dart';
@@ -13,7 +16,7 @@ import 'package:toolbox/data/res/store.dart';
 import '../../core/analysis.dart';
 import '../../core/route.dart';
 import '../../core/update.dart';
-import '../../core/utils/platform.dart';
+import '../../core/utils/platform/base.dart';
 import '../../core/utils/ui.dart';
 import '../../data/model/app/github_id.dart';
 import '../../data/model/app/tab.dart';
@@ -44,6 +47,7 @@ class _HomePageState extends State<HomePage>
   late S _s;
 
   bool _switchingPage = false;
+  bool _isAuthing = false;
 
   @override
   void initState() {
@@ -79,6 +83,7 @@ class _HomePageState extends State<HomePage>
 
     switch (state) {
       case AppLifecycleState.resumed:
+        _auth();
         if (!Providers.server.isAutoRefreshOn) {
           Providers.server.startAutoRefresh();
         }
@@ -88,7 +93,7 @@ class _HomePageState extends State<HomePage>
         // Keep running in background on Android device
         if (isAndroid && Stores.setting.bgRun.fetch()) {
           if (Providers.app.moveBg) {
-            Miscs.bgRunChannel.invokeMethod('sendToBackground');
+            BgRun.moveToBg();
           }
         } else {
           Providers.server.setDisconnected();
@@ -336,6 +341,8 @@ class _HomePageState extends State<HomePage>
 
   @override
   Future<void> afterFirstLayout(BuildContext context) async {
+    // Auth required for first launch
+    _auth();
     if (Stores.setting.autoCheckAppUpdate.fetch()) {
       doUpdate(context);
     }
@@ -350,7 +357,7 @@ class _HomePageState extends State<HomePage>
 
   void updateHomeWidget() {
     if (Stores.setting.autoUpdateHomeWidget.fetch()) {
-      Miscs.homeWidgetChannel.invokeMethod('update');
+      HomeWidgetMC.update();
     }
   }
 
@@ -381,6 +388,34 @@ class _HomePageState extends State<HomePage>
         child: Text('${_s.save}:\n$e'),
       );
       Loggers.app.warning('Update json settings failed', e, trace);
+    }
+  }
+
+  void _auth() {
+    if (Stores.setting.useBioAuth.fetch()) {
+      if (!_isAuthing) {
+        _isAuthing = true;
+        authBio(_s.authRequired).then(
+          (val) {
+            switch (val) {
+              case AuthResult.success:
+                // wait for animation
+                Future.delayed(
+                    const Duration(seconds: 1), () => _isAuthing = false);
+                break;
+              case AuthResult.fail:
+              case AuthResult.cancel:
+                _isAuthing = false;
+                _auth();
+                break;
+              case AuthResult.notAvail:
+                _isAuthing = false;
+                Stores.setting.useBioAuth.put(false);
+                break;
+            }
+          },
+        );
+      }
     }
   }
 }
